@@ -1,3 +1,13 @@
+# Fork of "Airtable DokuWiki Sync" by CameronWard301
+My intention is to add a few features suited for my application.
+
+Planned features are:
+- Display single record as horizontal table
+- Display content in rating fields as symbol ★
+- Display content in checkbox fields as symbols ☑ and ☐
+- Figure out if it is possible to display linked records
+
+--------
 # Airtable Dokuwiki Sync
 
 A Dokuwiki plugin to sync data from airtable
