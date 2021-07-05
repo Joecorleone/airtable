@@ -244,7 +244,9 @@ class syntax_plugin_airtable extends DokuWiki_Syntax_Plugin {
 							$field = $this->renderMedia($parameter_array, $image);
 							$html  .= '<td>' . $field . '</td>';
 							continue;
-						}
+						} 
+						$html .= '<td>' . implode(", ", $record['fields'][$field]) . '</td>';
+						continue;
 					}
 					
 					if(in_array($field, $rating_fields)){
@@ -315,6 +317,7 @@ class syntax_plugin_airtable extends DokuWiki_Syntax_Plugin {
 					throw new InvalidAirtableString("Invalid field name: " . htmlspecialchars($field));
 				}
 				if(is_array($api_response['fields'][$field])) {
+					$html .= '<td>' . implode(", ", $record['fields'][$field]) . '</td>';
 					continue;
 				}
 				if(in_array($field, $rating_fields)){
@@ -356,6 +359,8 @@ class syntax_plugin_airtable extends DokuWiki_Syntax_Plugin {
 							$html  .= '<td>' . $field . '</td>';
 							continue;
 						}
+						$html .= '<td>' . implode(", ", $api_response['fields'][$field]) . '</td>';
+						continue;
 					}
 					
 					if(in_array($field, $rating_fields)){
@@ -377,6 +382,8 @@ class syntax_plugin_airtable extends DokuWiki_Syntax_Plugin {
 							$html  .= '<td>' . $field . '</td>';
 							continue;
 						}
+						$html .= '<td>' . implode(", ", $api_response['fields'][$field]) . '</td>';
+						continue;
 					}
 					
 					if(in_array($field, $rating_fields)){
@@ -708,7 +715,7 @@ class syntax_plugin_airtable extends DokuWiki_Syntax_Plugin {
         $num = intval($string);
 		
 		$s = "";
-		for ($i = 0; $i <= $num; $i++) {
+		for ($i = 1; $i <= $num; $i++) {
 			$s .= "★";
 		}
 		
