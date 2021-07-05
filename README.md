@@ -13,6 +13,7 @@ Current status:
    * type "record": "hor", "vert" and "none" (default), "none" results in the usual bevior of displaying the record in several formatted lines. Example: `{{airtable>type: "record" | record-url: "https://airtable.com/tblXYZ/viwABCN/rec123?blocks=hide" | fields: "Project" , "Description" | orientation: "hor" }}`
 1. Added option to display rating and checkbox field values with symbols. Structure is likely to be changed, see [Issue](https://github.com/CameronWard301/airtable/issues/15).
 Example: `{airtable>type: "table" | record-url: "https://airtable.com/tblXYZ/viwABC?blocks=hide" | fields: "Project" , "Description", "Priority", "Completed" | rating-fields: "Priority" | checkbox-fields: "Completed" }}`
+1. Added support for "Multiple select" fields.
 
 
 
