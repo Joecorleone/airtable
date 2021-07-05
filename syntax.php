@@ -772,7 +772,10 @@ class syntax_plugin_airtable extends DokuWiki_Syntax_Plugin {
      */
     private function sendRecordRequest($data) {
         $request = $data['table'] . '/' . urlencode($data['record-id']);
-        return $this->sendRequest($request);
+		if (key_exists('base', $data)){
+			return $this->sendRequest($data['base'], $request);
+		}		
+        return $this->sendBaseRequest($request);
     }
 
     /**
@@ -829,19 +832,26 @@ class syntax_plugin_airtable extends DokuWiki_Syntax_Plugin {
                 $request .= '&' . urlencode('sort[0][direction]') . '=' . urlencode($order);
             }
         }
-
-        return $this->sendRequest($request);
+		if (key_exists('base', $data)){
+			return $this->sendRequest($data['base'], $request);
+		}	
+        return $this->sendBaseRequest($request);
     }
+	
+	private function sendBaseRequest($request) {
+		return $this->sendRequest(BASE_ID, $request);
+	}
 
     /**
      * Method to call the airtable API
      *
+	 * @param $base
      * @param $request
      * @return false|string
      * @throws InvalidAirtableString
      */
-    private function sendRequest($request) {
-        $url  = 'https://api.airtable.com/v0/' . BASE_ID . '/' . $request;
+    private function sendRequest($base, $request) {
+        $url  = 'https://api.airtable.com/v0/' . $base . '/' . $request;
         $curl = curl_init($url);
         curl_setopt($curl, CURLOPT_URL, $url);
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
