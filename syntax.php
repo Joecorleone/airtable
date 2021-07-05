@@ -178,11 +178,11 @@ class syntax_plugin_airtable extends DokuWiki_Syntax_Plugin {
                         $parameter_array               = $this->parseTableString($user_string);
                         $api_response                  = $this->sendTableRequest($parameter_array);
                         $parameter_array['thumbnails'] = $this->findMedia($api_response);
-                        if(count($api_response['records']) == 1) { //if query resulted in one record, render as a template:
-                            $renderer->doc .= $this->renderRecord($parameter_array, $api_response['records'][0]);
-                        } else {
+                        //if(count($api_response['records']) == 1) { //if query resulted in one record, render as a template:
+                        //    $renderer->doc .= $this->renderRecord($parameter_array, $api_response['records'][0]);
+                        //} else {
                             $renderer->doc .= $this->renderTable($parameter_array, $api_response);
-                        }
+                        //}
                         return true;
                     case ($display_type === "record"):
                         $parameter_array               = $this->parseRecordString($user_string);
@@ -228,33 +228,62 @@ class syntax_plugin_airtable extends DokuWiki_Syntax_Plugin {
 		$rating_fields = $parameter_array['rating-fields'];
 		$checkbox_fields = $parameter_array['checkbox-fields'];
 		
-        $html = '<div style="overflow-x: auto"><table class="airtable-table"><thead><tr>';
-        foreach($parameter_array['fields'] as $field) {
-            $html .= '<th>' . $field . '</th>';
-        }
-        $html .= '</tr></thead><tbody>';
-        foreach($api_response['records'] as $record) {
-            $html .= '<tr>';
-            foreach($fields as $field) {
-                if(is_array($record['fields'][$field])) {
-                    if($image = $this->findMedia($record['fields'][$field])) {
-                        $field = $this->renderMedia($parameter_array, $image);
-                        $html  .= '<td>' . $field . '</td>';
-                        continue;
-                    }
-                }
+		$html = '<div style="overflow-x: auto"><table class="airtable-table">';
+		if ($parameter_array['orientation'] == "vert"){
+			
+			$html .= '<thead><tr>';
+			foreach($parameter_array['fields'] as $field) {
+				$html .= '<th>' . $field . '</th>';
+			}
+			$html .= '</tr></thead><tbody>';
+			foreach($api_response['records'] as $record) {
+				$html .= '<tr>';
+				foreach($fields as $field) {
+					if(is_array($record['fields'][$field])) {
+						if($image = $this->findMedia($record['fields'][$field])) {
+							$field = $this->renderMedia($parameter_array, $image);
+							$html  .= '<td>' . $field . '</td>';
+							continue;
+						}
+					}
+					
+					if(in_array($field, $rating_fields)){
+						$html .= '<td>' . $this->renderRating($record['fields'][$field]) . '</td>';		
+					} elseif (in_array($field, $checkbox_fields)){
+						$html .= '<td>' . $this->renderCheckbox($record['fields'][$field]) . '</td>';
+					} else {
+						$html .= '<td>' . $this->renderAnyExternalLinks(htmlspecialchars($record['fields'][$field])) . '</td>';
+					}                
+				}
+				$html .= '</tr>';
+			}
+			$html .= '</tbody>';
+		} else {
+			foreach($parameter_array['fields'] as $field) {
+				$html .= '<tr>';
+				$html .= '<th>' . $field . '</th>';
+				foreach($api_response['records'] as $record) {
+					if(is_array($record['fields'][$field])) {
+						if($image = $this->findMedia($record['fields'][$field])) {
+							$field = $this->renderMedia($parameter_array, $image);
+							$html  .= '<td>' . $field . '</td>';
+							continue;
+						}
+					}
+					
+					if(in_array($field, $rating_fields)){
+						$html .= '<td>' . $this->renderRating($record['fields'][$field]) . '</td>';		
+					} elseif (in_array($field, $checkbox_fields)){
+						$html .= '<td>' . $this->renderCheckbox($record['fields'][$field]) . '</td>';
+					} else {
+						$html .= '<td>' . $this->renderAnyExternalLinks(htmlspecialchars($record['fields'][$field])) . '</td>';
+					} 
+				}
 				
-				if(in_array($field, $rating_fields)){
-					$html .= '<td>' . $this->renderRating($record['fields'][$field]) . '</td>';		
-				} elseif (in_array($field, $checkbox_fields)){
-					$html .= '<td>' . $this->renderCheckbox($record['fields'][$field]) . '</td>';
-				} else {
-					$html .= '<td>' . $this->renderAnyExternalLinks(htmlspecialchars($record['fields'][$field])) . '</td>';
-				}                
-            }
-            $html .= '</tr>';
-        }
-        $html .= '</tbody></table></div>';
+				$html .= '</tr>';
+			}	
+		}
+        $html .= '</table></div>';
         return $html;
     }
 
@@ -272,41 +301,98 @@ class syntax_plugin_airtable extends DokuWiki_Syntax_Plugin {
         $fields = $parameter_array['fields'];
 		$rating_fields = $parameter_array['rating-fields'];
 		$checkbox_fields = $parameter_array['checkbox-fields'];
-        $html   = '<div class="airtable-record">';
-        if($parameter_array['thumbnails'] !== false) {
-            $parameter_array['image-size'] = "large";
-            $image_styles                  = 'float: right; max-width: 350px; margin-left: 10px';
-            $html                          .= $this->renderMedia($parameter_array, $parameter_array['thumbnails'], $image_styles);
-        }
-        foreach($fields as $field) {
-            if(!array_key_exists($field, $api_response['fields'])) { //if field is not present in array:
-                throw new InvalidAirtableString("Invalid field name: " . htmlspecialchars($field));
-            }
-            if(is_array($api_response['fields'][$field])) {
-                continue;
-            }
-            if(in_array($field, $rating_fields)){
-				$html .= '
-				<div>
-					<h3>' . $field . '</h3>
-					<p>' . $this->renderRating($api_response['fields'][$field]) . '</p>
-				</div>';			
-			} elseif (in_array($field, $checkbox_fields)){
-				$html .= '
-				<div>
-					<h3>' . $field . '</h3>
-					<p>' . $this->renderCheckbox($api_response['fields'][$field]) . '</p>
-				</div>';
-			} else {
-				$html .= '
-				<div>
-					<h3>' . $field . '</h3>
-					<p>' . $this->renderAnyExternalLinks($api_response['fields'][$field]) . '</p>
-				</div>';
+		
+		if ($parameter_array['orientation'] == "none"){
+			$html   = '<div class="airtable-record">';
+			if($parameter_array['thumbnails'] !== false) {
+				$parameter_array['image-size'] = "large";
+				$image_styles                  = 'float: right; max-width: 350px; margin-left: 10px';
+				$html                          .= $this->renderMedia($parameter_array, $parameter_array['thumbnails'], $image_styles);
 			}
-        }
-        $html .= '<div style="clear: both;"></div>';
-        $html .= '</div>';
+			
+			foreach($fields as $field) {
+				if(!array_key_exists($field, $api_response['fields'])) { //if field is not present in array:
+					throw new InvalidAirtableString("Invalid field name: " . htmlspecialchars($field));
+				}
+				if(is_array($api_response['fields'][$field])) {
+					continue;
+				}
+				if(in_array($field, $rating_fields)){
+					$html .= '
+					<div>
+						<h3>' . $field . '</h3>
+						<p>' . $this->renderRating($api_response['fields'][$field]) . '</p>
+					</div>';			
+				} elseif (in_array($field, $checkbox_fields)){
+					$html .= '
+					<div>
+						<h3>' . $field . '</h3>
+						<p>' . $this->renderCheckbox($api_response['fields'][$field]) . '</p>
+					</div>';
+				} else {
+					$html .= '
+					<div>
+						<h3>' . $field . '</h3>
+						<p>' . $this->renderAnyExternalLinks($api_response['fields'][$field]) . '</p>
+					</div>';
+				}
+			}
+			$html .= '<div style="clear: both;"></div>';
+			$html .= '</div>';
+			
+		} else {
+			$html = '<div style="overflow-x: auto"><table class="airtable-table">';
+			if ($parameter_array['orientation'] == "vert"){
+				
+				$html .= '<thead><tr>';
+				foreach($parameter_array['fields'] as $field) {
+					$html .= '<th>' . $field . '</th>';
+				}
+				$html .= '</tr></thead><tbody><tr>';
+				foreach($fields as $field) {
+					if(is_array($api_response['fields'][$field])) {
+						if($image = $this->findMedia($api_response['fields'][$field])) {
+							$field = $this->renderMedia($parameter_array, $image);
+							$html  .= '<td>' . $field . '</td>';
+							continue;
+						}
+					}
+					
+					if(in_array($field, $rating_fields)){
+						$html .= '<td>' . $this->renderRating($api_response['fields'][$field]) . '</td>';		
+					} elseif (in_array($field, $checkbox_fields)){
+						$html .= '<td>' . $this->renderCheckbox($api_response['fields'][$field]) . '</td>';
+					} else {
+						$html .= '<td>' . $this->renderAnyExternalLinks(htmlspecialchars($api_response['fields'][$field])) . '</td>';
+					}                
+				}
+				$html .= '</tr></tbody>';
+			} else {
+				foreach($parameter_array['fields'] as $field) {
+					$html .= '<tr><th>' . $field . '</th>';
+					
+					if(is_array($api_response['fields'][$field])) {
+						if($image = $this->findMedia($api_response['fields'][$field])) {
+							$field = $this->renderMedia($parameter_array, $image);
+							$html  .= '<td>' . $field . '</td>';
+							continue;
+						}
+					}
+					
+					if(in_array($field, $rating_fields)){
+						$html .= '<td>' . $this->renderRating($api_response['fields'][$field]) . '</td>';		
+					} elseif (in_array($field, $checkbox_fields)){
+						$html .= '<td>' . $this->renderCheckbox($api_response['fields'][$field]) . '</td>';
+					} else {
+						$html .= '<td>' . $this->renderAnyExternalLinks(htmlspecialchars($api_response['fields'][$field])) . '</td>';
+					} 					
+					
+					$html .= '</tr>';
+				}	
+			}
+			$html .= '</table></div>';		
+		}	
+        
         return $html;
     }
 
@@ -404,8 +490,8 @@ class syntax_plugin_airtable extends DokuWiki_Syntax_Plugin {
      * @throws InvalidAirtableString
      */
     private function parseTableString($user_string): array {
-        $table_parameter_types  = array("type" => true, "table" => true, "fields" => true, "record-url" => true, "where" => "", "order-by" => "", "order" => "asc", "max-records" => "", "rating-fields" => "", "checkbox-fields" => "");
-        $table_parameter_values = array("order" => ["asc", "desc"]);
+        $table_parameter_types  = array("type" => true, "table" => true, "fields" => true, "record-url" => true, "where" => "", "order-by" => "", "order" => "asc", "max-records" => "", "orientation" => "vert", "rating-fields" => "", "checkbox-fields" => "");
+        $table_parameter_values = array("order" => ["asc", "desc"], "orientation" => ["vert", "hor"]);
         $table_query            = $this->decodeRecordURL($this->getParameters($user_string));
         return $this->checkParameters($table_query, $table_parameter_types, $table_parameter_values);
     }
@@ -417,8 +503,8 @@ class syntax_plugin_airtable extends DokuWiki_Syntax_Plugin {
      * @throws InvalidAirtableString
      */
     private function parseRecordString($user_string): array {
-        $record_parameter_types  = array("type" => true, "record-url" => true, "table" => true, "fields" => true, "record-id" => true, "alt-tag" => "", "rating-fields" => "", "checkbox-fields" => "");
-        $record_parameter_values = array();
+        $record_parameter_types  = array("type" => true, "record-url" => true, "table" => true, "fields" => true, "record-id" => true, "alt-tag" => "", "orientation" => "none", "rating-fields" => "", "checkbox-fields" => "");
+        $record_parameter_values = array("orientation" => ["none", "vert", "hor"]);
         $record_query            = $this->decodeRecordURL($this->getParameters($user_string));
         return $this->checkParameters($record_query, $record_parameter_types, $record_parameter_values);
     }
