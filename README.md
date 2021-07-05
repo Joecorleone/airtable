@@ -14,7 +14,7 @@ Current status:
 1. Added option to display rating and checkbox field values with symbols. Structure is likely to be changed, see [Issue](https://github.com/CameronWard301/airtable/issues/15).
 Example: `{airtable>type: "table" | record-url: "https://airtable.com/tblXYZ/viwABC?blocks=hide" | fields: "Project" , "Description", "Priority", "Completed" | rating-fields: "Priority" | checkbox-fields: "Completed" }}`
 1. Added support for "Multiple select" fields.
-
+1. Added support for multiple airtable bases. The one in the DokuWiki's configuration is the default. Adding the option `base` a dfferent ID can be specified. Example: `{airtable>type: "table" | record-url: "https://airtable.com/tblXYZ/viwABC?blocks=hide" | fields: "Project" , "Description" | base: "appABC123" }}` _This could be a potential security issue, as everyone with permission to edit the Wiki can see the ID._
 
 
 --------
